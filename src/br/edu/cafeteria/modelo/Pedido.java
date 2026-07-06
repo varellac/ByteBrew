@@ -8,20 +8,23 @@ public class Pedido {
     private static int contadorPedidos = 1;
     
     private int numeroSequencial;
+    private Atendente atendente;
     private Cliente cliente; // Opcional
     private List<ItemPedido> itens;
 
-    public Pedido() {
+    public Pedido(Atendente atendente) {
         this.numeroSequencial = contadorPedidos++;
+        this.atendente = atendente;
         this.itens = new ArrayList<>();
     }
 
-    public Pedido(Cliente cliente) {
-        this();
+    public Pedido(Atendente atendente, Cliente cliente) {
+        this(atendente);
         this.cliente = cliente;
     }
 
     public int getNumeroSequencial() { return numeroSequencial; }
+    public Atendente getAtendente() { return atendente; }
     public Cliente getCliente() { return cliente; }
     public List<ItemPedido> getItens() { return itens; }
 
@@ -47,15 +50,20 @@ public class Pedido {
         return total;
     }
 
+    // Sobrecarga para permitir finalizar sem desconto
     public void finalizarPedido() {
+        finalizarPedido(0.0);
+    }
+
+    public void finalizarPedido(double valorDesconto) {
         // Atualiza estoque
         for (ItemPedido item : itens) {
             item.getProduto().diminuirEstoque(item.getQuantidade());
         }
         
-        // Se houver cliente, adicionar XP
+        // Se houver cliente, adicionar XP sobre o valor líquido pago (Total - Desconto)
         if (this.cliente != null) {
-            double valorVenda = calcularValorTotal();
+            double valorVenda = calcularValorTotal() - valorDesconto;
             this.cliente.adicionarXP(valorVenda);
         }
     }

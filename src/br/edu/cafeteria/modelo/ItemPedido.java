@@ -16,6 +16,7 @@ public class ItemPedido {
     public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
 
     public double getValorTotal() {
-        return produto.getPrecoBase() * quantidade;
+        // Polimorfismo por Coerção: conversão implícita/explícita de int (quantidade) para double
+        return produto.getPrecoBase() * (double) quantidade;
     }
 }
