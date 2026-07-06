@@ -23,9 +23,14 @@ public abstract class Produto {
     public void setPrecoBase(double precoBase) { this.precoBase = precoBase; }
 
     public int getQuantidadeEstoque() { return quantidadeEstoque; }
-    public void setQuantidadeEstoque(int quantidadeEstoque) { this.quantidadeEstoque = quantidadeEstoque; }
+    public void setQuantidadeEstoque(int quantidadeEstoque) { 
+        this.quantidadeEstoque = quantidadeEstoque < 0 ? 0 : quantidadeEstoque;
+    }
 
     public void diminuirEstoque(int quantidade) {
         this.quantidadeEstoque -= quantidade;
+        if (this.quantidadeEstoque < 0) {
+            this.quantidadeEstoque = 0;
+        }
     }
 }

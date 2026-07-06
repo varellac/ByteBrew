@@ -2,6 +2,7 @@ package br.edu.cafeteria.app;
 
 import br.edu.cafeteria.excecao.EstoqueInsuficienteException;
 import br.edu.cafeteria.excecao.PontosInsuficientesException;
+import br.edu.cafeteria.modelo.Atendente;
 import br.edu.cafeteria.modelo.Bebida;
 import br.edu.cafeteria.modelo.Cliente;
 import br.edu.cafeteria.modelo.ClienteStandard;
@@ -15,8 +16,6 @@ import br.edu.cafeteria.servico.Promocional;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +23,7 @@ public class CafeteriaApp extends JFrame {
     private final List<Produto> cardapio = new ArrayList<>();
     private final List<Cliente> clientes = new ArrayList<>();
     private Pedido pedidoAtual;
+    private Atendente atendente;
 
     private JTable menuTable;
     private JTable pedidoTable;
@@ -46,6 +46,8 @@ public class CafeteriaApp extends JFrame {
     }
 
     private void inicializarDados() {
+        atendente = new Atendente("Bilbo", "A001");
+        
         cardapio.add(new Comida("C001", "Lembas Bread", 15.0, 10, 5, true));
         cardapio.add(new Comida("C002", "Portal Cake", 25.0, 5, 10, false));
         cardapio.add(new Bebida("B001", "Poção de Mana", 12.0, 20, "M", 0));
@@ -214,9 +216,9 @@ public class CafeteriaApp extends JFrame {
     private void criarNovoPedido() {
         Cliente clienteSelecionado = selecionarCliente();
         if (clienteSelecionado == null) {
-            pedidoAtual = new Pedido();
+            pedidoAtual = new Pedido(atendente);
         } else {
-            pedidoAtual = new Pedido(clienteSelecionado);
+            pedidoAtual = new Pedido(atendente, clienteSelecionado);
         }
 
         pedidoLabel.setText("Pedido #" + pedidoAtual.getNumeroSequencial());
