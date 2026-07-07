@@ -677,7 +677,7 @@ public class CafeteriaApp extends JFrame {
         atualizarTabelaCardapio();
         registrarLog("Pedido finalizado com sucesso.");
         if (pedidoAtual.getCliente() != null) {
-            registrarLog(String.format("XP do cliente agora: R$ %.2f.", pedidoAtual.getCliente().getSaldoXP()));
+            registrarLog(String.format("XP do cliente agora: %.2f.", pedidoAtual.getCliente().getSaldoXP()));
         }
         criarNovoPedido();
     }
