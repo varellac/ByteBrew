@@ -27,15 +27,33 @@ public class CafeteriaApp extends JFrame {
 
     private JTable menuTable;
     private JTable pedidoTable;
+    private JTable clienteTable;
     private JTextArea logArea;
     private JLabel totalLabel;
     private JComboBox<String> clienteCombo;
+    private DefaultComboBoxModel<String> clienteComboModel;
     private JSpinner quantidadeSpinner;
     private JButton pagarComXPButton;
     private JButton aplicarPromocaoButton;
     private JButton finalizarPedidoButton;
     private JButton novoPedidoButton;
     private JLabel pedidoLabel;
+
+    private JTextField produtoCodigoField;
+    private JTextField produtoNomeField;
+    private JTextField produtoPrecoField;
+    private JTextField produtoEstoqueField;
+    private JComboBox<String> produtoTipoCombo;
+    private JButton adicionarProdutoButton;
+    private JButton atualizarProdutoButton;
+    private JButton removerProdutoButton;
+
+    private JTextField clienteNomeField;
+    private JTextField clienteCPFField;
+    private JComboBox<String> clienteTipoCombo;
+    private JButton adicionarClienteButton;
+    private JButton atualizarClienteButton;
+    private JButton removerClienteButton;
 
     public CafeteriaApp() {
         super("Byte & Brew - Cafeteria Responsiva");
@@ -82,7 +100,9 @@ public class CafeteriaApp extends JFrame {
         painel.add(new JLabel("Cliente:"), c);
 
         c.gridx = 1;
-        clienteCombo = new JComboBox<>(new String[]{"Cliente Casual", "Frodo Baggins (Standard)", "Gandalf (VIP)"});
+        clienteComboModel = new DefaultComboBoxModel<>();
+        clienteCombo = new JComboBox<>(clienteComboModel);
+        atualizarComboClientes();
         painel.add(clienteCombo, c);
 
         c.gridx = 2;
@@ -107,11 +127,12 @@ public class CafeteriaApp extends JFrame {
     }
 
     private JPanel criarPainelCentro() {
-        JPanel painel = new JPanel(new GridLayout(1, 2, 8, 8));
-
-        painel.add(criarPainelMenu());
-        painel.add(criarPainelResumoPedido());
-
+        JPanel painel = new JPanel(new GridLayout(2, 1, 8, 8));
+        JPanel topo = new JPanel(new GridLayout(1, 2, 8, 8));
+        topo.add(criarPainelMenu());
+        topo.add(criarPainelResumoPedido());
+        painel.add(topo);
+        painel.add(criarPainelCRUD());
         return painel;
     }
 
@@ -128,6 +149,11 @@ public class CafeteriaApp extends JFrame {
         menuTable = new JTable(cardapioModel);
         menuTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         menuTable.setFillsViewportHeight(true);
+        menuTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                popularCamposProdutoSelecionado();
+            }
+        });
 
         atualizarTabelaCardapio();
 
@@ -190,6 +216,317 @@ public class CafeteriaApp extends JFrame {
         finalizarPedidoButton.addActionListener(e -> finalizarPedido());
 
         return painel;
+    }
+
+    private JPanel criarPainelCRUD() {
+        JPanel painel = new JPanel(new GridLayout(1, 2, 8, 8));
+        painel.setBorder(BorderFactory.createTitledBorder("CRUD de Produtos e Clientes"));
+        painel.add(criarPainelCRUDProdutos());
+        painel.add(criarPainelCRUDClientes());
+        return painel;
+    }
+
+    private JPanel criarPainelCRUDProdutos() {
+        JPanel painel = new JPanel(new GridBagLayout());
+        painel.setBorder(BorderFactory.createTitledBorder("Gerenciar Produtos"));
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 4, 4, 4);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0;
+        c.gridy = 0;
+        painel.add(new JLabel("Código:"), c);
+        c.gridx = 1;
+        produtoCodigoField = new JTextField();
+        painel.add(produtoCodigoField, c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        painel.add(new JLabel("Nome:"), c);
+        c.gridx = 1;
+        produtoNomeField = new JTextField();
+        painel.add(produtoNomeField, c);
+
+        c.gridx = 0;
+        c.gridy = 2;
+        painel.add(new JLabel("Preço:"), c);
+        c.gridx = 1;
+        produtoPrecoField = new JTextField();
+        painel.add(produtoPrecoField, c);
+
+        c.gridx = 0;
+        c.gridy = 3;
+        painel.add(new JLabel("Estoque:"), c);
+        c.gridx = 1;
+        produtoEstoqueField = new JTextField();
+        painel.add(produtoEstoqueField, c);
+
+        c.gridx = 0;
+        c.gridy = 4;
+        painel.add(new JLabel("Tipo:"), c);
+        c.gridx = 1;
+        produtoTipoCombo = new JComboBox<>(new String[]{"Comida", "Bebida"});
+        painel.add(produtoTipoCombo, c);
+
+        c.gridx = 0;
+        c.gridy = 5;
+        c.gridwidth = 2;
+        adicionarProdutoButton = new JButton("Incluir Produto");
+        painel.add(adicionarProdutoButton, c);
+
+        c.gridy = 6;
+        atualizarProdutoButton = new JButton("Atualizar Produto");
+        painel.add(atualizarProdutoButton, c);
+
+        c.gridy = 7;
+        removerProdutoButton = new JButton("Remover Produto");
+        painel.add(removerProdutoButton, c);
+
+        adicionarProdutoButton.addActionListener(e -> adicionarProduto());
+        atualizarProdutoButton.addActionListener(e -> atualizarProduto());
+        removerProdutoButton.addActionListener(e -> removerProduto());
+
+        return painel;
+    }
+
+    private JPanel criarPainelCRUDClientes() {
+        JPanel painel = new JPanel(new GridBagLayout());
+        painel.setBorder(BorderFactory.createTitledBorder("Gerenciar Clientes"));
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 4, 4, 4);
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0;
+        c.gridy = 0;
+        painel.add(new JLabel("Nome:"), c);
+        c.gridx = 1;
+        clienteNomeField = new JTextField();
+        painel.add(clienteNomeField, c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        painel.add(new JLabel("CPF:"), c);
+        c.gridx = 1;
+        clienteCPFField = new JTextField();
+        painel.add(clienteCPFField, c);
+
+        c.gridx = 0;
+        c.gridy = 2;
+        painel.add(new JLabel("Tipo:"), c);
+        c.gridx = 1;
+        clienteTipoCombo = new JComboBox<>(new String[]{"Standard", "VIP"});
+        painel.add(clienteTipoCombo, c);
+
+        c.gridx = 0;
+        c.gridy = 3;
+        c.gridwidth = 2;
+        adicionarClienteButton = new JButton("Incluir Cliente");
+        painel.add(adicionarClienteButton, c);
+
+        c.gridy = 4;
+        atualizarClienteButton = new JButton("Atualizar Cliente");
+        painel.add(atualizarClienteButton, c);
+
+        c.gridy = 5;
+        removerClienteButton = new JButton("Remover Cliente");
+        painel.add(removerClienteButton, c);
+
+        adicionarClienteButton.addActionListener(e -> adicionarCliente());
+        atualizarClienteButton.addActionListener(e -> atualizarCliente());
+        removerClienteButton.addActionListener(e -> removerCliente());
+
+        clienteTable = new JTable(new DefaultTableModel(new Object[]{"Nome", "CPF", "Tipo"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+        clienteTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        clienteTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                popularCamposClienteSelecionado();
+            }
+        });
+
+        c.gridy = 6;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        c.fill = GridBagConstraints.BOTH;
+        painel.add(new JScrollPane(clienteTable), c);
+
+        atualizarTabelaClientes();
+        return painel;
+    }
+
+    private void atualizarComboClientes() {
+        clienteComboModel.removeAllElements();
+        clienteComboModel.addElement("Cliente Casual");
+        for (Cliente cliente : clientes) {
+            String tipo = cliente instanceof ClienteVIP ? "VIP" : "Standard";
+            clienteComboModel.addElement(cliente.getNome() + " (" + tipo + ")");
+        }
+    }
+
+    private void atualizarTabelaClientes() {
+        DefaultTableModel modelo = (DefaultTableModel) clienteTable.getModel();
+        modelo.setRowCount(0);
+        for (Cliente cliente : clientes) {
+            String tipo = cliente instanceof ClienteVIP ? "VIP" : "Standard";
+            modelo.addRow(new Object[]{cliente.getNome(), cliente.getCpf(), tipo});
+        }
+    }
+
+    private void popularCamposProdutoSelecionado() {
+        int linha = menuTable.getSelectedRow();
+        if (linha < 0) {
+            return;
+        }
+        produtoCodigoField.setText((String) menuTable.getValueAt(linha, 0));
+        produtoNomeField.setText((String) menuTable.getValueAt(linha, 1));
+        String preco = ((String) menuTable.getValueAt(linha, 2)).replace("R$ ", "");
+        produtoPrecoField.setText(preco);
+        produtoEstoqueField.setText(String.valueOf(menuTable.getValueAt(linha, 3)));
+        Produto produto = cardapio.get(linha);
+        produtoTipoCombo.setSelectedIndex(produto instanceof Bebida ? 1 : 0);
+    }
+
+    private void popularCamposClienteSelecionado() {
+        int linha = clienteTable.getSelectedRow();
+        if (linha < 0) {
+            return;
+        }
+        clienteNomeField.setText((String) clienteTable.getValueAt(linha, 0));
+        clienteCPFField.setText((String) clienteTable.getValueAt(linha, 1));
+        clienteTipoCombo.setSelectedItem(clienteTable.getValueAt(linha, 2));
+    }
+
+    private void limparCamposProduto() {
+        produtoCodigoField.setText("");
+        produtoNomeField.setText("");
+        produtoPrecoField.setText("");
+        produtoEstoqueField.setText("");
+        produtoTipoCombo.setSelectedIndex(0);
+    }
+
+    private void limparCamposCliente() {
+        clienteNomeField.setText("");
+        clienteCPFField.setText("");
+        clienteTipoCombo.setSelectedIndex(0);
+    }
+
+    private void adicionarProduto() {
+        try {
+            String codigo = produtoCodigoField.getText().trim();
+            String nome = produtoNomeField.getText().trim();
+            double preco = Double.parseDouble(produtoPrecoField.getText().trim());
+            int estoque = Integer.parseInt(produtoEstoqueField.getText().trim());
+            if (codigo.isEmpty() || nome.isEmpty()) {
+                registrarLog("Código e nome são obrigatórios.");
+                return;
+            }
+            Produto produto;
+            if (produtoTipoCombo.getSelectedItem().equals("Bebida")) {
+                produto = new Bebida(codigo, nome, preco, estoque, "M", 0);
+            } else {
+                produto = new Comida(codigo, nome, preco, estoque, 10, false);
+            }
+            cardapio.add(produto);
+            atualizarTabelaCardapio();
+            limparCamposProduto();
+            registrarLog("Produto incluído: " + nome + " [" + codigo + "].");
+        } catch (NumberFormatException ex) {
+            registrarLog("Preço e estoque devem ser valores numéricos válidos.");
+        }
+    }
+
+    private void atualizarProduto() {
+        int linha = menuTable.getSelectedRow();
+        if (linha < 0) {
+            registrarLog("Selecione um produto para atualizar.");
+            return;
+        }
+        try {
+            Produto produto = cardapio.get(linha);
+            String novoNome = produtoNomeField.getText().trim();
+            double novoPreco = Double.parseDouble(produtoPrecoField.getText().trim());
+            int novoEstoque = Integer.parseInt(produtoEstoqueField.getText().trim());
+            if (!novoNome.isEmpty()) {
+                produto.setNome(novoNome);
+            }
+            produto.setPrecoBase(novoPreco);
+            produto.setQuantidadeEstoque(novoEstoque);
+            atualizarTabelaCardapio();
+            registrarLog("Produto atualizado: " + produto.getCodigo() + ".");
+        } catch (NumberFormatException ex) {
+            registrarLog("Preço e estoque devem ser valores numéricos válidos.");
+        }
+    }
+
+    private void removerProduto() {
+        int linha = menuTable.getSelectedRow();
+        if (linha < 0) {
+            registrarLog("Selecione um produto para remover.");
+            return;
+        }
+        Produto produto = cardapio.remove(linha);
+        atualizarTabelaCardapio();
+        registrarLog("Produto removido: " + produto.getCodigo() + ".");
+        limparCamposProduto();
+    }
+
+    private void adicionarCliente() {
+        String nome = clienteNomeField.getText().trim();
+        String cpf = clienteCPFField.getText().trim();
+        String tipo = (String) clienteTipoCombo.getSelectedItem();
+        if (nome.isEmpty() || cpf.isEmpty()) {
+            registrarLog("Nome e CPF são obrigatórios.");
+            return;
+        }
+        for (Cliente existente : clientes) {
+            if (existente.getCpf().equals(cpf)) {
+                registrarLog("Já existe cliente com este CPF.");
+                return;
+            }
+        }
+        Cliente cliente = tipo.equals("VIP") ? new ClienteVIP(nome, cpf) : new ClienteStandard(nome, cpf);
+        clientes.add(cliente);
+        atualizarTabelaClientes();
+        atualizarComboClientes();
+        limparCamposCliente();
+        registrarLog("Cliente incluído: " + nome + " [" + cpf + "].");
+    }
+
+    private void atualizarCliente() {
+        int linha = clienteTable.getSelectedRow();
+        if (linha < 0) {
+            registrarLog("Selecione um cliente para atualizar.");
+            return;
+        }
+        String novoNome = clienteNomeField.getText().trim();
+        if (novoNome.isEmpty()) {
+            registrarLog("Nome não pode ficar vazio.");
+            return;
+        }
+        Cliente cliente = clientes.get(linha);
+        cliente.setNome(novoNome);
+        atualizarTabelaClientes();
+        atualizarComboClientes();
+        registrarLog("Cliente atualizado: " + cliente.getCpf() + ".");
+    }
+
+    private void removerCliente() {
+        int linha = clienteTable.getSelectedRow();
+        if (linha < 0) {
+            registrarLog("Selecione um cliente para remover.");
+            return;
+        }
+        Cliente cliente = clientes.remove(linha);
+        atualizarTabelaClientes();
+        atualizarComboClientes();
+        registrarLog("Cliente removido: " + cliente.getCpf() + ".");
+        limparCamposCliente();
     }
 
     private JPanel criarPainelRodape() {
