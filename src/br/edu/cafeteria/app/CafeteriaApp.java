@@ -14,7 +14,7 @@ import br.edu.cafeteria.servico.PromocaoEventoGeek;
 import br.edu.cafeteria.servico.Promocional;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,12 +127,18 @@ public class CafeteriaApp extends JFrame {
     }
 
     private JPanel criarPainelCentro() {
-        JPanel painel = new JPanel(new GridLayout(2, 1, 8, 8));
+        // Usar JSplitPane vertical para permitir que o usuário redimensione a área
+        JPanel painel = new JPanel(new BorderLayout());
         JPanel topo = new JPanel(new GridLayout(1, 2, 8, 8));
         topo.add(criarPainelMenu());
         topo.add(criarPainelResumoPedido());
-        painel.add(topo);
-        painel.add(criarPainelCRUD());
+
+        JPanel crud = criarPainelCRUD();
+
+        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topo, crud);
+        split.setResizeWeight(0.6); // dar prioridade ao topo inicialmente
+        split.setOneTouchExpandable(true);
+        painel.add(split, BorderLayout.CENTER);
         return painel;
     }
 
@@ -350,11 +356,58 @@ public class CafeteriaApp extends JFrame {
             }
         });
 
+        // tornar a área de clientes maior para melhor usabilidade
+        clienteTable.setPreferredScrollableViewportSize(new Dimension(420, 220));
+        // aumentar legibilidade: fonte maior e linhas mais altas
+        clienteTable.setFont(clienteTable.getFont().deriveFont(14f));
+        clienteTable.setRowHeight(26);
+        // permitir barra horizontal e ajustar larguras das colunas para destacar o nome
+        clienteTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        JScrollPane clienteScroll = new JScrollPane(clienteTable);
+        // aumentar preferências para que o painel de clientes ocupe mais espaço
+        clienteScroll.setPreferredSize(new Dimension(760, 320));
+        clienteScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        javax.swing.table.TableColumnModel colModel = clienteTable.getColumnModel();
+        if (colModel.getColumnCount() >= 3) {
+            colModel.getColumn(0).setPreferredWidth(420); // Nome maior
+            colModel.getColumn(1).setPreferredWidth(200); // CPF
+            colModel.getColumn(2).setPreferredWidth(120); // Tipo
+        }
+
+        // Renderer para deixar a coluna Nome em negrito
+        clienteTable.getColumnModel().getColumn(0).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                c.setFont(c.getFont().deriveFont(Font.BOLD, 14f));
+                return c;
+            }
+        });
+
+        // Double-click no cabeçalho para auto-ajustar colunas
+        clienteTable.getTableHeader().addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    // auto-ajusta cada coluna para o conteúdo
+                    for (int col = 0; col < clienteTable.getColumnCount(); col++) {
+                        int max = 50; // largura mínima
+                        for (int row = 0; row < clienteTable.getRowCount(); row++) {
+                            TableCellRenderer renderer = clienteTable.getCellRenderer(row, col);
+                            Component comp = clienteTable.prepareRenderer(renderer, row, col);
+                            max = Math.max(max, comp.getPreferredSize().width + 10);
+                        }
+                        clienteTable.getColumnModel().getColumn(col).setPreferredWidth(max);
+                    }
+                }
+            }
+        });
+
         c.gridy = 6;
         c.weightx = 1.0;
         c.weighty = 1.0;
         c.fill = GridBagConstraints.BOTH;
-        painel.add(new JScrollPane(clienteTable), c);
+        painel.add(clienteScroll, c);
 
         atualizarTabelaClientes();
         return painel;
@@ -533,12 +586,15 @@ public class CafeteriaApp extends JFrame {
         JPanel painel = new JPanel(new BorderLayout(4, 4));
         painel.setBorder(BorderFactory.createTitledBorder("Registro de Ações"));
 
-        logArea = new JTextArea(8, 20);
+        // reduzir altura do rodapé para priorizar a área de gerenciamento de clientes
+        logArea = new JTextArea(4, 20);
         logArea.setEditable(false);
         logArea.setLineWrap(true);
         logArea.setWrapStyleWord(true);
 
-        painel.add(new JScrollPane(logArea), BorderLayout.CENTER);
+        JScrollPane logScroll = new JScrollPane(logArea);
+        logScroll.setPreferredSize(new Dimension(800, 120));
+        painel.add(logScroll, BorderLayout.CENTER);
 
         return painel;
     }
